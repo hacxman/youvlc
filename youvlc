@@ -1,0 +1,45 @@
+#!/usr/bin/python
+# copyright: 2016, hexo [ hacxman at gmail ]
+# license: MIT
+
+from PyQt5 import QtCore, uic, QtWidgets, QtGui
+import sys
+import os, subprocess
+
+
+class VLCRunner(QtCore.QThread):
+  def __init__(self, path):
+    QtCore.QThread.__init__(self)
+    self.path = path
+
+  def run(self):
+    os.system("vlc '{}'".format(self.path.strip()))
+
+  def __del__(self):
+    self.join()
+
+
+class Win(QtWidgets.QWidget):
+  def __init__(self, parent = None):
+    QtWidgets.QWidget.__init__(self, parent)
+    uic.loadUi('form.ui', self)
+
+  @QtCore.pyqtSlot()
+  def on_pushButton_clicked(self):
+    url = self.lineEdit.text()
+    try:
+      p = subprocess.check_output(["youtube-dl", "-g", url])
+      self.resolvedURL.setText(p)
+    except subprocess.CalledProcessError as e:
+      self.resolvedURL.setText(str(e) + '\r\n' + 'Your URL is likely invalid')
+
+    w = VLCRunner(p)
+    w.start()
+
+if __name__ == "__main__":
+  app = QtWidgets.QApplication(sys.argv)
+  w = Win()
+  w.show()
+  w.setVisible(True)
+
+  sys.exit(app.exec_())
